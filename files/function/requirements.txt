@@ -1,0 +1,5 @@
+requests
+crhelper
+boto
+boto3
+botocore

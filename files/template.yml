@@ -1,0 +1,52 @@
+---
+# Author: Brandt Woolf
+# Date: 2021-08-07
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Unix time lister
+Parameters:
+  TimeZone:
+    Type: String
+    Description: State/Province
+    Default: 'Europe/London'
+  TimeZoneAttributes:
+    Type: String
+    Description: "* | abbreviation, client_ip, datetime, day_of_week, day_of_year, dst, dst_from, dst_offset, dst_until, raw_offset, timezone, unixtime, utc_datetime, utc_offset, week_number"
+    Default: '*'
+Resources:
+  UnixtimeLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: main.handler
+      Runtime: python3.8
+      CodeUri: function/.
+      Description: Call the AWS Lambda API
+      Timeout: 30
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSLambda_ReadOnlyAccess
+        - AWSXrayWriteOnlyAccess
+      Tracing: Active
+      Layers:
+        - !Ref libs
+  libs:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: unixtime-deps
+      Description: Dependencies for the unixtime app.
+      ContentUri: package/.
+      CompatibleRuntimes:
+        - python3.8
+  Unixtime:
+    Type: 'Custom::Unixtime'
+    Properties:
+      ServiceToken: !GetAtt UnixtimeLambda.Arn
+      Name: "Unixtime"
+      FunctionName: !Ref UnixtimeLambda
+      zone: !Ref TimeZone
+      gather_attr: !Ref TimeZoneAttributes
+Outputs:
+  unixtime:
+    Value: !GetAtt Unixtime.unixtime
+  datetime:
+    Value: !GetAtt Unixtime.datetime

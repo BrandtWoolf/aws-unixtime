@@ -1,0 +1,130 @@
+---
+- hosts: localhost
+  vars:
+    deploy: yes
+    destroy: no
+    timestamp: "{{ ansible_date_time.epoch }}"
+    time_zone: "Europe/London"
+    time_zone_attrs: "*"
+  tasks:
+    - name: Check for localhost config
+      stat:
+        path: host_vars/localhost.yml
+      register: local_config
+
+    - name: validate deploy
+      block:
+        - name: Warn of overwriting existing deployment
+          pause:
+            prompt: "host_vars/localhost.yml present... Are you sure you want to overwrite existing stack info? (Y/n): "
+          register: warn
+
+        - name: check input
+          fail:
+            msg: "exiting without taking action..."
+          when: warn.user_input != 'Y'
+
+      when: local_config.stat.exists and deploy
+
+    - set_fact:
+        stack_name: "unixtime-stack-{{ timestamp }}"
+        bucket_name: "unixtime-bucket-{{ timestamp }}"
+      when: not local_config.stat.exists
+
+    - name: Deploy {{ stack_name }}
+      block:
+        - name: Write stack_name and bucket_name to file
+          template:
+            src: localhost.yml.j2
+            dest: host_vars/localhost.yml
+
+        - name: Remove stale packages
+          file:
+            path: files/package/
+            state: absent
+
+    # attempt to leverage ansible module to create pip dependencies
+    #    - name: build packages
+    #      pip:
+    #        #requirements: function/requirements.txt
+    #        extra_args: --target package/python
+    #        name:
+    #          - requests
+    #          - crhelper
+    #          - boto
+    #          - boto3
+    #          - botocore
+
+        - name: Build dependencies folder
+          command: pip install --target files/package/python -r files/function/requirements.txt
+
+        - name: Create an empty {{ bucket_name }}
+          amazon.aws.aws_s3:
+            bucket: "{{ bucket_name }}"
+            mode: create
+
+    #  Attempt to leverage ansible modules to recreate `aws cloudformation package` actions
+    #    - name: package files
+    #      community.general.archive:
+    #        path: "{{ item.path }}"
+    #        dest: "{{ item.dest }}"
+    #        format: zip
+    #      loop:
+    #        - path: files/function
+    #          dest: tmp/function.zip
+    #        - path: files/package
+    #          dest: tmp/package.zip
+    #
+    #    - name: Upload files to new bucket
+    #      amazon.aws.aws_s3:
+    #        bucket: "{{ bucket_name }}"
+    #        mode: put
+    #        object: "{{ item.name }}"
+    #        src: "{{ item.src }}"
+    #      loop:
+    #        - name: function.zip
+    #          src: tmp/function.zip
+    #        - name: package.zip
+    #          src: tmp/package.zip
+    #      register: bucket_files
+
+        - name: Create and deploy stack dependencies
+          command: "aws cloudformation package --template-file files/template.yml --s3-bucket {{ bucket_name }} --output-template-file files/generated-s3-template.yml"
+
+        - name: Create cloudformations stack
+          amazon.aws.cloudformation:
+            stack_name: "{{ stack_name }}"
+            state: "present"
+            region: "us-east-2"
+            disable_rollback: true
+            template: "files/generated-s3-template.yml"
+            capabilities:
+              - CAPABILITY_AUTO_EXPAND
+              - CAPABILITY_IAM
+              - CAPABILITY_NAMED_IAM
+            template_parameters:
+              TimeZone: "{{ time_zone }}"
+              TimeZoneAttributes: "{{ time_zone_attrs }}"
+      when: deploy
+
+    - name: Destroy {{ stack_name }}
+      block:
+        - name: destroy stack
+          amazon.aws.cloudformation:
+            stack_name: "{{ stack_name }}"
+            state: "absent"
+            region: "us-east-2"
+
+        - name: Destroy {{ bucket_name }}
+          amazon.aws.aws_s3:
+            bucket: "{{ bucket_name }}"
+            mode: delete
+
+        - name: Delete localhost.yml
+          file:
+            path: host_vars/localhost.yml
+            state: absent
+
+      when: destroy
+
+
