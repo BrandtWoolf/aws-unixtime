@@ -28,6 +28,7 @@ Ensure `python3` is installed
 
 ```bash
 git clone https://github.com/bwoolf1122/aws-unixtime.git
+cd aws-unixtime
 python3 -m venv venv/
 source venv/bin/activate
 pip install --upgrade pip
