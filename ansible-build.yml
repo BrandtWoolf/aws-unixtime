@@ -29,7 +29,7 @@
     - set_fact:
         stack_name: "unixtime-stack-{{ timestamp }}"
         bucket_name: "unixtime-bucket-{{ timestamp }}"
-      when: not local_config.stat.exists and warn is defined
+      when: not local_config.stat.exists or warn is defined
 
     - name: Deploy {{ stack_name }}
       block:
