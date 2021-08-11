@@ -3,3 +3,4 @@ tmp/*.zip
 files/package/*
 files/stack_name
 files/generated-s3-template.yml
+host_vars/localhost.yml
