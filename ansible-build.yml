@@ -5,7 +5,7 @@
     destroy: no
     timestamp: "{{ ansible_date_time.epoch }}"
     time_zone: "Europe/London"
-    time_zone_attrs: "*"
+    time_zone_attrs: "unixtime"
   tasks:
     - name: Check for localhost config
       stat:
@@ -43,18 +43,6 @@
             path: files/package/
             state: absent
 
-    # attempt to leverage ansible module to create pip dependencies
-    #    - name: build packages
-    #      pip:
-    #        #requirements: function/requirements.txt
-    #        extra_args: --target package/python
-    #        name:
-    #          - requests
-    #          - crhelper
-    #          - boto
-    #          - boto3
-    #          - botocore
-
         - name: Build dependencies folder
           command: pip install --target files/package/python -r files/function/requirements.txt
 
@@ -62,31 +50,6 @@
           amazon.aws.aws_s3:
             bucket: "{{ bucket_name }}"
             mode: create
-
-    #  Attempt to leverage ansible modules to recreate `aws cloudformation package` actions
-    #    - name: package files
-    #      community.general.archive:
-    #        path: "{{ item.path }}"
-    #        dest: "{{ item.dest }}"
-    #        format: zip
-    #      loop:
-    #        - path: files/function
-    #          dest: tmp/function.zip
-    #        - path: files/package
-    #          dest: tmp/package.zip
-    #
-    #    - name: Upload files to new bucket
-    #      amazon.aws.aws_s3:
-    #        bucket: "{{ bucket_name }}"
-    #        mode: put
-    #        object: "{{ item.name }}"
-    #        src: "{{ item.src }}"
-    #      loop:
-    #        - name: function.zip
-    #          src: tmp/function.zip
-    #        - name: package.zip
-    #          src: tmp/package.zip
-    #      register: bucket_files
 
         - name: Create and deploy stack dependencies
           command: "aws cloudformation package --template-file files/template.yml --s3-bucket {{ bucket_name }} --output-template-file files/generated-s3-template.yml"
@@ -105,6 +68,15 @@
             template_parameters:
               TimeZone: "{{ time_zone }}"
               TimeZoneAttributes: "{{ time_zone_attrs }}"
+
+        - name: Gather stack Info
+          amazon.aws.cloudformation_info:
+            stack_name: "{{ stack_name }}"
+          register: stack_info
+
+        - name: Display stack outputs
+          debug:
+            msg: "{{ stack_info.cloudformation[stack_name].stack_outputs }}"
       when: deploy
 
     - name: Destroy {{ stack_name }}

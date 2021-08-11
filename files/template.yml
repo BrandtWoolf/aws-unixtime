@@ -50,3 +50,29 @@ Outputs:
     Value: !GetAtt Unixtime.unixtime
   datetime:
     Value: !GetAtt Unixtime.datetime
+  abbreviation:
+    Value: !GetAtt Unixtime.abbreviation
+  clientIp:
+    Value: !GetAtt Unixtime.client_ip
+  dayOfWeek:
+    Value: !GetAtt Unixtime.day_of_week
+  dayOfYear:
+    Value: !GetAtt Unixtime.day_of_week
+  dst:
+    Value: !GetAtt Unixtime.dst
+  dstFrom:
+    Value: !GetAtt Unixtime.dst_from
+  dstOffset:
+    Value: !GetAtt Unixtime.dst_offset
+  dstUntil:
+    Value: !GetAtt Unixtime.dst_until
+  rawOffset:
+    Value: !GetAtt Unixtime.raw_offset
+  timezone:
+    Value: !GetAtt Unixtime.timezone
+  utcDatetime:
+    Value: !GetAtt Unixtime.utc_datetime
+  utcOffset:
+    Value: !GetAtt Unixtime.utc_offset
+  weekNumber:
+    Value: !GetAtt Unixtime.week_number

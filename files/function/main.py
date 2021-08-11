@@ -25,10 +25,10 @@ def HttpGet(url):
     r.raise_for_status()
 
 def validate_attrs(attrs):
-  valid_attrs = ['*', 'abbreviation',' client_ip',' datetime',' day_of_week',' day_of_year',' dst',' dst_from',' dst_offset',' dst_until',' raw_offset',' timezone',' unixtime',' utc_datetime',' utc_offset',' week_number']
+  valid_attrs = ['*', 'abbreviation','client_ip','datetime','day_of_week','day_of_year','dst','dst_from','dst_offset','dst_until','raw_offset','timezone','unixtime','utc_datetime','utc_offset','week_number']
   attrs = attrs.split(',')
   for attr in attrs:
-    if not attr in valid_attrs:
+    if attr not in valid_attrs:
       raise ValueError(f"{attr} not in {valid_attrs}")
   return attrs
 
@@ -80,8 +80,11 @@ def create(event, context):
       helper.Data[key] = timezone[key]
   # return the attrs included in validated_attrs
   else:
-    for attr in validated_attrs:
-       helper.Data[attr] = timezone[attr]
+    for key in timezone:
+      if key in validated_attrs:
+        helper.Data[key] = timezone[key]
+      else:
+        helper.Data[key] = ''
 
 @helper.update
 def update(event, context):

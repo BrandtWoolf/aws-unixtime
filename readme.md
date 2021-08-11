@@ -22,6 +22,10 @@ See documentation for more info: https://docs.aws.amazon.com/cli/latest/userguid
 
 ### Local Environment
 
+Install the AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
+
+Ensure `python3` is installed
+
 ```bash
 git clone https://github.com/bwoolf1122/aws-unixtime.git
 python3 -m venv venv/
@@ -42,7 +46,7 @@ Once your environnement is setup, you can now run the following commands:
 
 ```yaml
 time_zone: "Europe/London"
-time_zone_attrs: "*"
+time_zone_attrs: "unixtime"
 ```
 
 ##### Valid
@@ -68,10 +72,22 @@ utc_offset
 week_number
 ```
 
+Valid `time_zone`s can be found here: http://worldtimeapi.org/api/timezone
+
 ### Deploy Command
 
 ```bash
+# use default vars
 ansible-playbook ansible-build.yml
+
+# example to specify specific attrs to return
+ansible-playbook ansible-build.yml -e 'time_zone_attrs=unixtime,timezone'
+
+# example to specify all attrs to return
+ansible-playbook ansible-build.yml -e 'time_zone_attrs="*"'
+
+# example to specify specific attrs to return and timezone
+ansible-playbook ansible-build.yml -e 'time_zone_attrs=unixtime,timezone time_zone="Africa/Abidjan"'
 ```
 
 Once this is run, `host_vars/localhost.yml` will be created with the stack and bucket name. NOTE: its best to leave this file be and let Ansible manage this
