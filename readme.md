@@ -51,7 +51,7 @@ time_zone_attrs: "unixtime"
 
 ##### Valid
 
-Valid `time_zone_attrs` can be supplied in a command seperated list:
+Valid `time_zone_attrs` can be supplied in a comma seperated list:
 
 ```
 *
